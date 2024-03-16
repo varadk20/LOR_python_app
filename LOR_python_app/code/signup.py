@@ -1,5 +1,5 @@
 import sqlite3
-
+import re
 from PyQt6.QtWidgets import QMainWindow, QLineEdit, QApplication
 from PyQt6.uic import loadUi
 from LOR_python_app.code.adminwindow import AdminWindow
@@ -21,12 +21,25 @@ class SignUpWindow(QMainWindow):
         self.admin_window.show()  # Show the AdminWindow
 
 
-
     def on_signup_button_clicked(self):
         from LOR_python_app.code.login import Login
         name = self.lineEdit.text()
         email = self.lineEdit_2.text()
         password = self.lineEdit_3.text()
+
+        emailPattern = '[a-z0-9A-Z]*@student.sfit.ac.in'
+        usernamePattern = '[a-z0-9A-Z_]*'
+        if not re.match(emailPattern, email):
+            error_message = "<font color='red'>Invalid credentials.Please enter college email address</font>"
+            self.error_window = ErrorWindow(error_message)
+            self.error_window.show()
+            return
+
+        if not re.match(usernamePattern, name):
+            error_message = "<font color='red'>Please enter a combination from a-z,A-Z,0-9,_</font>"
+            self.error_window = ErrorWindow(error_message)
+            self.error_window.show()
+            return
 
         if not name or not email or not password:
             error_message = "<font color='red'>Please fill in all fields.</font>"

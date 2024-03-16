@@ -1,9 +1,7 @@
+import os
 import sqlite3
 from PyQt6.QtWidgets import QMainWindow, QMessageBox
 from PyQt6.uic import loadUi
-import smtplib
-import os
-from email.message import EmailMessage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,7 +32,7 @@ class FillDetailsWindow(QMainWindow):
         self.load_saved_values(username)
 
         # Inside the __init__ method of FillDetailsWindow class
-        self.generate_lor_button.clicked.connect(self.generate_recommendation_letter)
+        # self.generate_lor_button.clicked.connect(self.generate_recommendation_letter)
 
     def update_users_table(self):
         try:
@@ -87,7 +85,7 @@ class FillDetailsWindow(QMainWindow):
 
         # Check if any required field is empty
         if not all([full_name, branch, specialization, phone]):
-            self.send_email_notification()
+            QMessageBox.critical(self, "Error", "Please fill in all fields.")
             return
 
         # Connect to the database and update user details
@@ -114,71 +112,33 @@ class FillDetailsWindow(QMainWindow):
             # Display an error message if there's an issue with the database
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
-    def send_email_notification(self):
-        try:
-            # Get user's email address from the database
-            connection = sqlite3.connect("../database/signup.db")
-            cursor = connection.cursor()
-            cursor.execute("SELECT email FROM users WHERE name = ?", (self.username,))
-            user_email = cursor.fetchone()[0]  # Assuming email is in the first column
-
-            # Insert available details into the database
-            cursor.execute("UPDATE users SET full_name = COALESCE(?, full_name), branch = COALESCE(?, branch), "
-                           "specialization = COALESCE(?, specialization), phone = COALESCE(?, phone) WHERE name = ?",
-                           (self.full_name_input.text(), self.branch_input.text(), self.specialization_input.text(),
-                            self.phone_input.text(), self.username))
-            connection.commit()
-
-            # Compose email
-            msg = EmailMessage()
-            msg.set_content(
-                f"Dear {self.username}, you have not filled in all required details. Please fill in all fields.")
-
-            msg['Subject'] = 'Incomplete Details'
-            msg['From'] = os.getenv('MY_MAIL')  # Sender's email
-            msg['To'] = user_email
-
-            # Send the email
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                smtp.login(os.getenv('MY_MAIL'), os.getenv('PASSWORD'))
-
-                smtp.send_message(msg)
-
-            QMessageBox.information(self, "Email Sent", "An email notification has been sent to your email address.")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred while sending email: {str(e)}")
-
-        # Close the window after sending email notification
-        self.close()
-
-    def generate_recommendation_letter(self):
-        try:
-            # Read the letter format from a text file
-            with open("../LOR.txt", "r") as file:
-                letter_format = file.read()
-
-            # Fill in the placeholders in the letter format with user details
-            recommendation_content = letter_format.format(
-                full_name=self.full_name_input.text(),
-                branch=self.branch_input.text(),
-                specialization=self.specialization_input.text(),
-                phone=self.phone_input.text(),
-                username=self.username
-            )
-
-            # Specify the folder path for saving the recommendation letters
-            folder_path = "../All_LORs"
-            os.makedirs(folder_path, exist_ok=True)  # Create the folder if it doesn't exist
-
-            # Save the recommendation letter to a file in the "All_LORs" folder
-            file_path = os.path.join(folder_path, f"{self.username}_LOR.txt")
-            with open(file_path, "w") as file:
-                file.write(recommendation_content)
-
-            QMessageBox.information(self, "Recommendation Letter Generated",
-                                    "The recommendation letter has been generated and saved.")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error",
-                                 f"An error occurred while generating the recommendation letter: {str(e)}")
+    # def generate_recommendation_letter(self):
+    #     try:
+    #         # Read the letter format from a text file
+    #         with open("../LOR.txt", "r") as file:
+    #             letter_format = file.read()
+    #
+    #         # Fill in the placeholders in the letter format with user details
+    #         recommendation_content = letter_format.format(
+    #             full_name=self.full_name_input.text(),
+    #             branch=self.branch_input.text(),
+    #             specialization=self.specialization_input.text(),
+    #             phone=self.phone_input.text(),
+    #             username=self.username
+    #         )
+    #
+    #         # Specify the folder path for saving the recommendation letters
+    #         folder_path = "../All_LORs"
+    #         os.makedirs(folder_path, exist_ok=True)  # Create the folder if it doesn't exist
+    #
+    #         # Save the recommendation letter to a file in the "All_LORs" folder
+    #         file_path = os.path.join(folder_path, f"{self.username}_LOR.txt")
+    #         with open(file_path, "w") as file:
+    #             file.write(recommendation_content)
+    #
+    #         QMessageBox.information(self, "Recommendation Letter Generated",
+    #                                 "The recommendation letter has been generated and saved.")
+    #
+    #     except Exception as e:
+    #         QMessageBox.critical(self, "Error",
+    #                              f"An error occurred while generating the recommendation letter: {str(e)}")
